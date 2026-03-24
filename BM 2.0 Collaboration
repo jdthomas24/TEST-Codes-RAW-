@@ -18,6 +18,7 @@ definition(
     iconX3Url: "https://raw.githubusercontent.com/hubitat/HubitatPublic/master/examples/icons/battery@2x.png",
     version: "2.3.6"
 )
+
 def installed() {
     log.debug "Installed - initializing app"
     initialize()
