@@ -124,7 +124,7 @@ section("Auto Battery Discovery") {
         autoDevices.each { device ->
             if(!state.history[device.id]) {
                 state.history[device.id] = [
-                    lastLevel: device.currentValue("battery")?.toInteger() ?: 100,
+                    lastLevel: (device.currentValue("battery")?.toInteger()) != null ? device.currentValue("battery").toInteger() : 100,
                     lastDate: now(),
                     drain: 0.3,
                     samples: [],
@@ -255,7 +255,8 @@ def scheduledSummary() {
     ]
 
     devs.each { device ->
-        def lvl = device.currentValue("battery")?.toInteger() ?: 100
+        def lvl = device.currentValue("battery")?.toInteger()
+        lvl = lvl != null ? lvl : 100
         def cat = lvl == 100 ? "🟢 Excellent" : lvl > 70 ? "🟢 Good" : lvl > 25 ? "🟠 Fair" : "🔴 Poor"
         categories[cat].list << [device: device, name: device.displayName.trim(), level: lvl]
     }
@@ -272,7 +273,8 @@ def scheduledSummary() {
     def highDrainList = devs.findAll { device ->
         getDrain(device) > 0.7
     }.collect { device ->
-        def lvl = device.currentValue("battery")?.toInteger() ?: 100
+        def lvl = device.currentValue("battery")?.toInteger()
+        lvl = lvl != null ? lvl : 100
         [name: device.displayName.trim(), level: lvl, health: health(device), drain: displayDrain(device)]
     }.sort { a, b ->
         a.level != b.level ? a.level <=> b.level : a.name <=> b.name
@@ -361,7 +363,7 @@ def updateBattery(device, level){
     // Initialize history entry if missing
     if(!data){
         state.history[device.id] = [
-            lastLevel: level ?: 100,
+            lastLevel: level != null ? level : 100,
             lastDate: now(),
             drain: 0.3,
             samples: [],
@@ -396,13 +398,13 @@ def updateBattery(device, level){
 
     // 🔹 Clear if battery has started draining (real usage detected)
     if(data.justReplaced && level < 95){
-    data.justReplaced = false
-}
+        data.justReplaced = false
+    }
 
     // 🔹 Fallback: clear after 24 hours
     else if(data.justReplaced && (now() - safeTime(replacedAt)) > 1000*60*60*24){
-    data.justReplaced = false
-}
+        data.justReplaced = false
+    }
 
     // Update drain based on lastLevel and samples
     def days = (now() - safeTime(data.lastDate)) / (1000*60*60*24)
@@ -434,7 +436,7 @@ def updateBattery(device, level){
 // ===================== DETECT REPLACEMENT ==================
 // ============================================================
 def detectReplacement(device, newLevel, oldLevel){
-    newLevel = newLevel ?: 100
+    newLevel = newLevel != null ? newLevel : 100
     oldLevel = oldLevel ?: state.history[device.id]?.lastLevel ?: 0
 
     if(!state.history[device.id]){
@@ -489,9 +491,10 @@ def updateTrend(device, drain){
 def getDrain(device){ return state.history?.get(device.id)?.drain ?:0.3 }
 def displayDrain(device){ return String.format("%.2f",getDrain(device)) }
 def estDays(device){
-    def level=device.currentValue("battery")?.toInteger() ?:100
-    def drain=getDrain(device)
-    if(drain<=0) drain=0.3
+    def level = device.currentValue("battery")?.toInteger()
+    level = level != null ? level : 100
+    def drain = getDrain(device)
+    if (drain <= 0) drain = 0.3
     return Math.round(level/drain)
 }
 def health(device){
@@ -512,7 +515,7 @@ def safeHistory(device){
     def data = state.history?.get(device.id)
     if(!data){
         data = [
-            lastLevel: device.currentValue("battery")?.toInteger() ?: 100,
+            lastLevel: (device.currentValue("battery")?.toInteger()) != null ? device.currentValue("battery").toInteger() : 100,
             lastDate: now(),
             drain: 0.3,
             samples: [],
@@ -588,7 +591,7 @@ def logReplacement(device, newLevel, manual=false){
     def data = state.history[device.id]
     if(!data){
         state.history[device.id] = [
-            lastLevel: newLevel ?: 100,
+            lastLevel: newLevel != null ? newLevel : 100,
             lastDate: now(),
             drain: 0.3,
             samples: [],
@@ -644,8 +647,10 @@ def summaryPage(){
         section("Battery Summary"){
             def devs = (autoDevices ?: []).findAll{ it?.currentValue("battery") != null }
             devs = devs.sort{ a,b -> 
-                def levelA = a.currentValue("battery") ?: 100
-                def levelB = b.currentValue("battery") ?: 100
+                def levelA = a.currentValue("battery")?.toInteger()
+                levelA = levelA != null ? levelA : 100
+                def levelB = b.currentValue("battery")?.toInteger()
+                levelB = levelB != null ? levelB : 100
                 levelA != levelB ? levelA <=> levelB : a.displayName <=> b.displayName
             }
 
@@ -662,7 +667,8 @@ def summaryPage(){
             devs.each{ device ->
                 def data = safeHistory(device)
 
-                def level = device.currentValue("battery")?.toInteger() ?: 100
+                def level = device.currentValue("battery")?.toInteger()
+                level = level != null ? level : 100
                 def drain = getDrain(device)
                 def est = estDays(device)
                 def h = health(device)
@@ -711,8 +717,10 @@ def trendsPage(){
 
             // Sort by worst battery first using same color thresholds
             devs = devs.sort { a, b ->
-                def levelA = a.currentValue("battery")?.toInteger() ?: 100
-                def levelB = b.currentValue("battery")?.toInteger() ?: 100
+                def levelA = a.currentValue("battery")?.toInteger()
+                levelA = levelA != null ? levelA : 100
+                def levelB = b.currentValue("battery")?.toInteger()
+                levelB = levelB != null ? levelB : 100
                 levelA != levelB ? levelA <=> levelB : a.displayName.trim() <=> b.displayName.trim()
             }
 
@@ -724,7 +732,8 @@ def trendsPage(){
 
             devs.each{ device ->
                 def hist = safeHistory(device)
-                def level = device.currentValue("battery")?.toInteger() ?: 100
+                def level = device.currentValue("battery")?.toInteger()
+                level = level != null ? level : 100
                 def drain = hist?.drain ?: 0.3
                 def trend = state.trend[device.id] ?: "Unknown"
 
@@ -903,7 +912,8 @@ def manualReplacementConfirmPage() {
                 replaceDevicesManual.each { deviceId ->
                     def device = autoDevices.find { it.id == deviceId }
                     if(device) {
-                        def level = device.currentValue("battery")?.toInteger() ?: 100
+                        def level = device.currentValue("battery")?.toInteger()
+                        level = level != null ? level : 100
 
                         // Ensure history exists
                         if(!state.history[device.id]) {
