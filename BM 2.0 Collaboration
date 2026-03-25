@@ -1,6 +1,6 @@
 // ============================================================
 // Battery Monitor 2.0 (TESTER Collaboration)
-// Version 2.4.0 beta 9
+// Version 2.4.0 beta 10
 // Author: Jdthomas24
 // Namespace: jdthomas24
 // Description: Advanced Hubitat battery monitoring with analytics, trends and replacement tracking (v2.3.2). Auto-adjusts drain for low-activity devices.
@@ -16,7 +16,7 @@ definition(
     iconUrl: "https://raw.githubusercontent.com/hubitat/HubitatPublic/master/examples/icons/battery.png",
     iconX2Url: "https://raw.githubusercontent.com/hubitat/HubitatPublic/master/examples/icons/battery@2x.png",
     iconX3Url: "https://raw.githubusercontent.com/hubitat/HubitatPublic/master/examples/icons/battery@2x.png",
-    version: "2.4.0 beta 8"
+    version: "2.4.0 beta 10"
 )
 
 def installed() {
@@ -803,8 +803,19 @@ def logReplacement(device, newLevel, manual=false){
             }
 
             table += "</table>"
-            paragraph table
-        }
+			paragraph table
+
+			// 🛠 Scroll to top fix for C8 Pro
+			section("") {
+			    paragraph """<script>
+        			function scrollTopFix() {
+           			 window.scrollTo(0, 0);
+        	}
+        			setTimeout(scrollTopFix, 50);
+        			setTimeout(scrollTopFix, 150);
+        			setTimeout(scrollTopFix, 300);
+    			</script>"""
+		}
     }
 }
 
@@ -815,11 +826,14 @@ def trendsPage(){
     dynamicPage(name:"trendsPage", title:"Battery Trends", install:false){
 
         // ✅ Scroll to top on page load
-        section("") {
-            paragraph """<script>
-                window.scrollTo(0,0);
-            </script>"""
-        }
+       		section("") {
+   			 paragraph """<script>
+        		function scrollTopFix() { window.scrollTo(0, 0); }
+		        setTimeout(scrollTopFix, 50);
+        		setTimeout(scrollTopFix, 150);
+        		setTimeout(scrollTopFix, 300);
+    		</script>"""
+		}
 
         section("Battery Trends"){
             def devs = (autoDevices ?: []).findAll{ it?.currentValue("battery") != null }
@@ -887,10 +901,13 @@ def historyPage() {
 
         // ✅ Scroll to top on page load
         section("") {
-            paragraph """<script>
-                window.scrollTo(0,0);
-            </script>"""
-        }
+   			 paragraph """<script>
+        			function scrollTopFix() { window.scrollTo(0, 0); }
+        			setTimeout(scrollTopFix, 50);
+        			setTimeout(scrollTopFix, 150);
+        			setTimeout(scrollTopFix, 300);
+    			</script>"""
+			}
 
         section("Battery Replacement History"){
             if(!state.replacements || state.replacements.size() == 0){
