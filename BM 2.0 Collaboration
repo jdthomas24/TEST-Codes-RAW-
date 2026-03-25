@@ -87,7 +87,7 @@ preferences {
     page(name:"manualReplacementConfirmPage")
     page(name:"infoPage")
 }
-/ ============================================================
+// ============================================================
 // ===================== MAIN PAGE ===========================
 // ============================================================
 def mainPage() {
@@ -95,8 +95,8 @@ def mainPage() {
     applyCustomLabel()
 
     dynamicPage(name: "mainPage",
-            title: settings?.customAppName?.trim() ? "Battery Monitor: ${settings.customAppName}" : "Battery Monitor 2.0",
-            install: true, uninstall: true) {
+                title: settings?.customAppName?.trim() ? "Battery Monitor: ${settings.customAppName}" : "Battery Monitor 2.0",
+                install: true, uninstall: true) {
 
         // ================= App Display Name =================
         section("App Display Name (optional)") {
@@ -104,41 +104,45 @@ def mainPage() {
                   title: "Custom App Name",
                   description: "Change how the app name appears in Hubitat UI",
                   required: false
-        }
-        // ================= Auto Battery Discovery =============
-section("Auto Battery Discovery") {
-    paragraph "<b>⚠ Important: The app automatically detects all devices reporting battery levels. " +
-          "Select the devices you want to monitor from the list below. Only selected devices will be tracked for trends, battery health, and notifications.</b>"
 
-    // ⚠ Mobile note for long device names
-    paragraph "<span style='color:red; font-weight:bold;'>Note for mobile users:</span> If your device names are long, they may extend past the screen in the selection list. This is a UI limitation on smaller screens. You can still select devices as usual."
-
-    paragraph "<span style='color:red; font-weight:bold;'>IMPORTANT: After selecting devices, you MUST click 'Done' to exit the app BEFORE viewing the battery report. Skipping this step may cause an error.</span>"
-
-    // Existing input logic stays exactly the same
-    input "autoDevices", "capability.battery",
-          title: "Select battery devices to monitor",
-          multiple: true,
-          required: true
-
-    // Initialize state.history and state.trend for selected devices
-    if(autoDevices) {
-        if(!state.history) state.history = [:]
-        if(!state.trend) state.trend = [:]
-        autoDevices.each { device ->
-            if(!state.history[device.id]) {
-                state.history[device.id] = [
-                    lastLevel: (device.currentValue("battery")?.toInteger()) != null ? device.currentValue("battery").toInteger() : 100,
-                    lastDate: now(),
-                    drain: 0.3,
-                    samples: [],
-                    justReplaced: false
-                ]
-                state.trend[device.id] = "Stable"
+            // Show live display of current name
+            if(settings?.customAppName?.trim()) {
+                paragraph "Current display name: <b>${settings.customAppName}</b>"
             }
         }
-    }
-}
+
+        // ================= Auto Battery Discovery =============
+        section("Auto Battery Discovery") {
+            paragraph "<b>⚠ Important: The app automatically detects all devices reporting battery levels. " +
+                      "Select the devices you want to monitor from the list below. Only selected devices will be tracked for trends, battery health, and notifications.</b>"
+
+            paragraph "<span style='color:red; font-weight:bold;'>Note for mobile users:</span> If your device names are long, they may extend past the screen in the selection list. This is a UI limitation on smaller screens. You can still select devices as usual."
+
+            paragraph "<span style='color:red; font-weight:bold;'>IMPORTANT: After selecting devices, you MUST click 'Done' to exit the app BEFORE viewing the battery report. Skipping this step may cause an error.</span>"
+
+            input "autoDevices", "capability.battery",
+                  title: "Select battery devices to monitor",
+                  multiple: true,
+                  required: true
+
+            if(autoDevices) {
+                if(!state.history) state.history = [:]
+                if(!state.trend) state.trend = [:]
+                autoDevices.each { device ->
+                    if(!state.history[device.id]) {
+                        state.history[device.id] = [
+                            lastLevel: (device.currentValue("battery")?.toInteger()) != null ? device.currentValue("battery").toInteger() : 100,
+                            lastDate: now(),
+                            drain: 0.3,
+                            samples: [],
+                            justReplaced: false
+                        ]
+                        state.trend[device.id] = "Stable"
+                    }
+                }
+            }
+        }
+
         // ================= Battery Scan Interval =================
         section("Battery Scan Interval") {
             input "scanInterval", "enum",
@@ -177,16 +181,15 @@ section("Auto Battery Discovery") {
             input "notifyExcellent", "bool", title: "🟢 Include Excellent (100%)",                         defaultValue: false
             input "notifyHighDrain", "bool", title: "⚠️ Include Health (High Drain - Fair or Poor, drain > 0.7%/day)", defaultValue: true
 
-			input "notifyStale",     "bool", title: "⚠️ Include Stale Devices",                            defaultValue: true
+            input "notifyStale",     "bool", title: "⚠️ Include Stale Devices",                            defaultValue: true
             input "staleThresholdHours", "number",
-            title: "Mark device as stale if no activity for X hours",
-            defaultValue: 24
-			input "notifyIncludeAppLink", "bool", title: "🔗 Include link to Battery Monitor app",         defaultValue: false
-			input "suppressEmptyReport", "bool", title: "🔕 Don't send notification if nothing to report", defaultValue: false
+                  title: "Mark device as stale if no activity for X hours",
+                  defaultValue: 24
+            input "notifyIncludeAppLink", "bool", title: "🔗 Include link to Battery Monitor app",         defaultValue: false
+            input "suppressEmptyReport", "bool", title: "🔕 Don't send notification if nothing to report", defaultValue: false
 
             paragraph "<b>Send notification now:</b>"
             input "sendNow", "bool", title: "📤 Send Notification Now (tap, then click Done)",             defaultValue: false
-
         }
 
         // ================= Reports =================
@@ -205,7 +208,6 @@ section("Auto Battery Discovery") {
         }
     }
 }
-
 // ============================================================
 // ===================== REPORT SCHEDULING ==================
 // ============================================================
