@@ -21,11 +21,17 @@ definition(
 
 def installed() {
     log.debug "Installed - initializing app"
+
+    applyCustomLabel()
+
     initialize()
 }
 
 def updated() {
     log.debug "Updated - re-initializing app"
+
+    applyCustomLabel()   // ✅ ensures name updates whenever settings change
+
     unschedule()
     unsubscribe()
     initialize()
@@ -38,12 +44,6 @@ def updated() {
         state.trend?.remove(removedId)
         log.debug "Cleaned up removed device: ${removedId}"
     }
-
-    // Also remove replacement history for devices no longer monitored
-    //if (state.replacements) {
-    //    def currentNames = autoDevices?.collect { it.displayName } ?: []
-    //    state.replacements = state.replacements.findAll { currentNames.contains(it.device) }
-    //}
 
     // Fire notification if toggle was set, then reset it
     if (settings?.sendNow) {
@@ -66,6 +66,16 @@ def initialize(){
     }
 }
 
+// =================== APPLY CUSTOM LABEL ===================
+def applyCustomLabel() {
+    if(settings?.customAppName) {
+        if(app.label != settings.customAppName) {
+            app.updateLabel(settings.customAppName)
+            log.debug "App label updated to: ${settings.customAppName}"
+        }
+    }
+}
+
 preferences {
     page(name:"mainPage")
     page(name:"summaryPage")
@@ -77,21 +87,16 @@ preferences {
     page(name:"manualReplacementConfirmPage")
     page(name:"infoPage")
 }
-
-// ============================================================
+/ ============================================================
 // ===================== MAIN PAGE ===========================
 // ============================================================
 def mainPage() {
-    // Update app label if custom name provided
-    if(settings?.customAppName) {
-        if(app.label != settings.customAppName) {
-            app.updateLabel(settings.customAppName)
-        }
-    }
+    // ✅ Immediately apply custom app name on first load
+    applyCustomLabel()
 
     dynamicPage(name: "mainPage",
-                title: (settings?.customAppName ?: "Battery Monitor 2.0"),
-                install: true, uninstall: true) {
+            title: settings?.customAppName?.trim() ? "Battery Monitor: ${settings.customAppName}" : "Battery Monitor 2.0",
+            install: true, uninstall: true) {
 
         // ================= App Display Name =================
         section("App Display Name (optional)") {
@@ -100,7 +105,6 @@ def mainPage() {
                   description: "Change how the app name appears in Hubitat UI",
                   required: false
         }
-
         // ================= Auto Battery Discovery =============
 section("Auto Battery Discovery") {
     paragraph "<b>⚠ Important: The app automatically detects all devices reporting battery levels. " +
