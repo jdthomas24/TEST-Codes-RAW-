@@ -1,6 +1,6 @@
 // ============================================================
 // Battery Monitor 2.0 (TESTER Collaboration)
-// Version 2.4.0 beta 5
+// Version 2.4.0 beta 6
 // Author: Jdthomas24
 // Namespace: jdthomas24
 // Description: Advanced Hubitat battery monitoring with analytics, trends and replacement tracking (v2.3.2). Auto-adjusts drain for low-activity devices.
@@ -269,16 +269,16 @@ def scheduledSummary() {
     }
 
     // ---- High Drain Section ----
-    // Flags any device whose health() is NOT Excellent (i.e. Good, Fair, or Poor drain rate)
-    def highDrainList = devs.findAll { device ->
-        getDrain(device) > 0.7
-    }.collect { device ->
-        def lvl = device.currentValue("battery")?.toInteger()
-        lvl = lvl != null ? lvl : 100
-        [name: device.displayName.trim(), level: lvl, health: health(device), drain: displayDrain(device)]
-    }.sort { a, b ->
-        a.level != b.level ? a.level <=> b.level : a.name <=> b.name
-    }
+// Flags only devices in 🔴 Poor health (>1.2%/day drain)
+def highDrainList = devs.findAll { device ->
+    getDrain(device) > 1.2
+}.collect { device ->
+    def lvl = device.currentValue("battery")?.toInteger()
+    lvl = lvl != null ? lvl : 100
+    [name: device.displayName.trim(), level: lvl, health: health(device), drain: displayDrain(device)]
+}.sort { a, b ->
+    a.level != b.level ? a.level <=> b.level : a.name <=> b.name
+}
 
     // ---- Build message — only include enabled categories ----
     def msg = "🔋 Battery Summary\n"
@@ -302,7 +302,7 @@ def scheduledSummary() {
 
     // High drain section
     if (notifyHighDrain != null ? notifyHighDrain : true) {
-        msg += "\n⚠️ Health (Drain / Day):\n"
+        msg += "\n⚠️ High Drain (🔴 Poor):\n"
         if (highDrainList) {
             highDrainList.each { dev ->
                 msg += "• ${dev.health} (${dev.drain}%) ${dev.name} (${dev.level}%)\n"
@@ -562,10 +562,12 @@ def formatTimeAgo(ts){
 def getBatteryLevelDisplay(level, device=null){
     level = (level instanceof Number ? level : null) != null ? level : 100
 
-    def label = ""
-    if(level > 70)      label = "🟢 ${level}%"
-    else if(level > 25) label = "🟠 ${level}%"
-    else                label = "🔴 ${level}%"
+    def cat = level == 100 ? "🟢 Excellent" :
+              level > 70  ? "🟢 Good" :
+              level > 25  ? "🟠 Fair" :
+                            "🔴 Poor"
+
+    def label = "${cat} (${level}%)"
 
     // Handle recently replaced tag
     def data = (device && state.history?.containsKey(device.id)) ? safeHistory(device) : null
@@ -976,19 +978,19 @@ def manualReplacementConfirmPage() {
 // ============================================================
 // ===================== INFO PAGE ===========================
 // ============================================================
-def infoPage(Map params = [:]){
+ddef infoPage(Map params = [:]){
     dynamicPage(name:"infoPage", title:"Battery Health Guide", install:false){
         
-        // ⚠ Note about color differences
+        // ✅ Updated note to reflect consistent colors
         section("<b>Note on Colors</b>") {
-            paragraph "⚠ Colors in battery reports reflect battery percentage (🔴 low, 🟠 medium, 🟢 good), while colors in this guide reflect drain-based health (🟢 Excellent, 🟡 Good, 🟠 Fair, 🔴 Poor)."
+            paragraph "⚠ Colors in battery reports reflect battery percentage (🔴 low, 🟠 medium, 🟢 good), while health ratings also use the same color system for consistency (🟢 Excellent/Good, 🟠 Fair, 🔴 Poor)."
         }
 
         section("<b>Battery Health Breakdown</b>"){
             def table = """<table style='width:100%; border-collapse: collapse;'>
 <tr style='font-weight:bold;'><td>Health</td><td>Drain Rate (per day)</td><td>What It Means</td></tr>
 <tr><td>🟢 Excellent</td><td>&lt; 0.3%</td><td>Battery is barely draining (very efficient device)</td></tr>
-<tr><td>🟡 Good</td><td>0.3 – 0.7%</td><td>Normal battery usage</td></tr>
+<tr><td>🟢 Good</td><td>0.3 – 0.7%</td><td>Normal battery usage</td></tr>
 <tr><td>🟠 Fair</td><td>0.7 – 1.2%</td><td>Higher-than-normal drain</td></tr>
 <tr><td>🔴 Poor</td><td>&gt; 1.2%</td><td>Battery draining fast (problem likely)</td></tr>
 </table>"""
