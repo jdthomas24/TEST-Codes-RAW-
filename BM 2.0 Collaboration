@@ -496,11 +496,22 @@ def detectReplacement(device, newLevel, oldLevel){
 // ===================== TREND LOGIC =========================
 // ============================================================
 def updateTrend(device, drain){
+    if(!device || drain == null) return
+
     def adjustedDrain = drain
-    if(drain > 5){
+
+    // Reduce drain for known high-use devices
+    def devType = device?.getData()?.deviceType?.toLowerCase() ?: ""
+    if(devType.contains("lock") || devType.contains("sensor") || devType.contains("contact")) {
+        adjustedDrain = adjustedDrain * 0.5  // naturally high-use devices drain slower for trend calculation
+    }
+
+    // Clamp absurd drain values
+    if(adjustedDrain > 5){
         adjustedDrain = 0.3
     }
 
+    // Median-of-samples smoothing
     def hist = state.history[device.id]
     if(hist?.samples && hist.samples.size() >= 3){
         def avg = hist.samples.sum() / hist.samples.size()
@@ -509,6 +520,7 @@ def updateTrend(device, drain){
         }
     }
 
+    // Assign trend based on adjusted drain
     if(adjustedDrain < 0.3) state.trend[device.id] = "Stable"
     else if(adjustedDrain < 0.8) state.trend[device.id] = "Moderate"
     else state.trend[device.id] = "Heavy Drain"
@@ -525,6 +537,13 @@ def estDays(device){
 }
 def health(device){
     def drain = getDrain(device)
+
+    // Adjust health thresholds for high-use devices
+    def devType = device?.getData()?.deviceType?.toLowerCase() ?: ""
+    if(devType.contains("lock") || devType.contains("sensor") || devType.contains("contact")) {
+        drain = drain * 0.5  // same adjustment as updateTrend()
+    }
+
     if(drain < 0.3)                     return "Excellent"
     if(drain >= 0.3 && drain <= 0.7)    return "Good"
     if(drain > 0.7 && drain <= 1.2)     return "Fair"
@@ -581,7 +600,6 @@ def formatTimeAgo(ts){
     def mins = (diffMs / (1000*60)).toInteger()
     return mins < 60 ? "${mins}m ago" : "${(mins/60).toInteger()}h ago"
 }
-
 // ============================================================
 // ===================== BATTERY DISPLAY =====================
 // ============================================================
@@ -749,13 +767,22 @@ def trendsPage(){
                 return
             }
 
-            // Sort by worst battery first using same color thresholds
+            // Define trend priority for sorting
+            def trendPriority = ["Heavy Drain": 1, "Moderate": 2, "Stable": 3]
+
+            // Sort by trend, then battery level, then name
             devs = devs.sort { a, b ->
-                def levelA = a.currentValue("battery")?.toInteger()
-                levelA = levelA != null ? levelA : 100
-                def levelB = b.currentValue("battery")?.toInteger()
-                levelB = levelB != null ? levelB : 100
-                levelA != levelB ? levelA <=> levelB : a.displayName.trim() <=> b.displayName.trim()
+                def trendA = state.trend[a.id] ?: "Stable"
+                def trendB = state.trend[b.id] ?: "Stable"
+                def prioA = trendPriority[trendA] ?: 3
+                def prioB = trendPriority[trendB] ?: 3
+                if(prioA != prioB) return prioA <=> prioB
+
+                def levelA = a.currentValue("battery")?.toInteger() ?: 100
+                def levelB = b.currentValue("battery")?.toInteger() ?: 100
+                if(levelA != levelB) return levelA <=> levelB
+
+                return a.displayName.trim() <=> b.displayName.trim()
             }
 
             // Start table
@@ -766,18 +793,21 @@ def trendsPage(){
 
             devs.each{ device ->
                 def hist = safeHistory(device)
-                def level = device.currentValue("battery")?.toInteger()
-                level = level != null ? level : 100
+                def level = device.currentValue("battery")?.toInteger() ?: 100
                 def drain = hist?.drain ?: 0.3
                 def trend = state.trend[device.id] ?: "Unknown"
 
-                // Use the same color codes as summary notifications
+                // Trend color
+                def trendColor = trend == "Heavy Drain" ? "🔴" :
+                                 trend == "Moderate" ? "🟠" : "🟢"
+
+                // Battery color display
                 def color = getBatteryLevelDisplay(level, device)
 
                 table+="<tr>"
                 table+="<td>${device.displayName}</td>"
                 table+="<td>${color}</td>"
-                table+="<td>${trend}</td>"
+                table+="<td>${trendColor} ${trend}</td>"
                 table+="<td>${String.format('%.2f', drain)}</td>"
                 table+="</tr>"
             }
