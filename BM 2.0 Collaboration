@@ -681,13 +681,20 @@ def logReplacement(device, newLevel, manual=false){
 // ============================================================
 // ===================== SUMMARY PAGE ========================
 // ============================================================
-def summaryPage(){
-    dynamicPage(name:"summaryPage",title:"Battery Summary",install:false){
+	def summaryPage(){
+    	dynamicPage(name:"summaryPage",title:"Battery Summary",install:false){
 
-        // 🛑 FIRST RUN PROTECTION
-        if(!state.history || state.history.size() == 0){
-            section("Setup Required"){
-                paragraph "⚠ <b>Setup Not Complete</b><br><br>" +
+        	// ✅ Scroll to top on page load
+        	section("") {
+            	paragraph """<script>
+                	window.scrollTo(0,0);
+            </script>"""
+        }
+
+        	// 🛑 FIRST RUN PROTECTION
+        	if(!state.history || state.history.size() == 0){
+            	section("Setup Required"){
+                	paragraph "⚠ <b>Setup Not Complete</b><br><br>" +
                           "You must click <b>Done</b> after selecting your devices before viewing reports.<br><br>" +
                           "Please exit the app and reopen it, then try again."
             }
@@ -759,6 +766,14 @@ def summaryPage(){
 // ============================================================
 def trendsPage(){
     dynamicPage(name:"trendsPage", title:"Battery Trends", install:false){
+
+        // ✅ Scroll to top on page load
+        section("") {
+            paragraph """<script>
+                window.scrollTo(0,0);
+            </script>"""
+        }
+
         section("Battery Trends"){
             def devs = (autoDevices ?: []).findAll{ it?.currentValue("battery") != null }
 
@@ -820,8 +835,16 @@ def trendsPage(){
 // ============================================================
 // ===================== HISTORY PAGE ========================
 // ============================================================
-def historyPage(){
+def historyPage() {
     dynamicPage(name:"historyPage", title:"Battery Replacement History", install:false){
+
+        // ✅ Scroll to top on page load
+        section("") {
+            paragraph """<script>
+                window.scrollTo(0,0);
+            </script>"""
+        }
+
         section("Battery Replacement History"){
             if(!state.replacements || state.replacements.size() == 0){
                 paragraph "No battery replacements have been logged yet."
