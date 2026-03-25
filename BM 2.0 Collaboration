@@ -978,7 +978,7 @@ def manualReplacementConfirmPage() {
 // ============================================================
 // ===================== INFO PAGE ===========================
 // ============================================================
-ddef infoPage(Map params = [:]){
+def infoPage(Map params = [:]){
     dynamicPage(name:"infoPage", title:"Battery Health Guide", install:false){
         
         // ✅ Updated note to reflect consistent colors
