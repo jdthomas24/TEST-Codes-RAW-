@@ -1,6 +1,6 @@
 // ============================================================
 // Battery Monitor 2.0 (TESTER Collaboration)
-// Version 2.4.0 beta 4
+// Version 2.4.0 beta 5
 // Author: Jdthomas24
 // Namespace: jdthomas24
 // Description: Advanced Hubitat battery monitoring with analytics, trends and replacement tracking (v2.3.2). Auto-adjusts drain for low-activity devices.
@@ -16,7 +16,7 @@ definition(
     iconUrl: "https://raw.githubusercontent.com/hubitat/HubitatPublic/master/examples/icons/battery.png",
     iconX2Url: "https://raw.githubusercontent.com/hubitat/HubitatPublic/master/examples/icons/battery@2x.png",
     iconX3Url: "https://raw.githubusercontent.com/hubitat/HubitatPublic/master/examples/icons/battery@2x.png",
-    version: "2.4.0 beta 4"
+    version: "2.4.0 beta 5"
 )
 
 def installed() {
@@ -177,11 +177,11 @@ section("Auto Battery Discovery") {
             input "staleThresholdHours", "number",
             title: "Mark device as stale if no activity for X hours",
             defaultValue: 24
-
-			input "suppressEmptyReport", "bool", title: "🔕 Don't send notification if nothing to report", defaultValue: false
+			input "notifyIncludeAppLink", "bool", title: "🔗 Include link to Battery Monitor app",            defaultValue: false
+			input "suppressEmptyReport", "bool", title: "🔕 Don't send notification if nothing to report",    defaultValue: false
 
             paragraph "<b>Test notification:</b>"
-            input "sendTestNow", "bool", title: "📤 Send Notification Now (tap, then click Done)", defaultValue: false
+            input "sendTestNow", "bool", title: "📤 Send Notification Now (tap, then click Done)",            defaultValue: false
 
         }
 
@@ -330,6 +330,12 @@ def scheduledSummary() {
             ((notifyHighDrain != null ? notifyHighDrain : true) && highDrainList) ||
             ((notifyStale != null ? notifyStale : true) && staleDevices)
         if (!hasContent) return
+    }
+
+    // Optionally append link to the Battery Monitor app
+    if (notifyIncludeAppLink != null ? notifyIncludeAppLink : false) {
+        def hubIp = location.hub.localIP
+        msg += "\n🔗 Battery Monitor: http://${hubIp}/installedapp/configure/${app.id}/mainPage"
     }
 
     // Send notifications — always send if at least one category is enabled
