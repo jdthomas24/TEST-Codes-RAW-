@@ -164,7 +164,7 @@ def mainPage() {
                   defaultValue: "daily"
 
             input "summaryTime", "time",
-                  title: "Notification Time",
+                  title: "<b>Notification Time:<b>",
                   required: false
         }
 
