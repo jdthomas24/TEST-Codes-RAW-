@@ -98,7 +98,7 @@ def mainPage() {
             }
         }
 
-        section("Auto Battery Discovery") {
+        section(hideable: true, hidden: true, "Select Monitored Devices") {
             paragraph "<b>⚠ Important: The app automatically detects all devices reporting battery levels. " +
                       "Select the devices you want to monitor from the list below. Only selected devices will be tracked for trends, battery health, and notifications.</b>"
             paragraph "<span style='color:red; font-weight:bold;'>Note for mobile users:</span> If your device names are long, they may extend past the screen in the selection list. This is a UI limitation on smaller screens. You can still select devices as usual."
