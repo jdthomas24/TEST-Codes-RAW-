@@ -7,7 +7,7 @@ definition(
     importUrl: "https://raw.githubusercontent.com/jdthomas24/Hubitat-Apps-Drivers/refs/heads/main/Battery%20Monitor%202.0/Raw%20Code/BatteryMonitor2.0.groovy",
     iconUrl: "https://raw.githubusercontent.com/jdthomas24/Hubitat-Apps-Drivers/refs/heads/main/Tests%20-%20Groovy%20RAW/Battery%20Monitor%202.0%20BETA%20Tests",
     iconX2Url: "https://raw.githubusercontent.com/jdthomas24/Hubitat-Apps-Drivers/refs/heads/main/Battery%20Monitor%202.0/Raw%20Code/BatteryMonitor2.0.groovy",
-    version: "2.4.0 beta 25"
+    version: "2.4.0 beta 26"
 )
 
 def installed() {
@@ -1452,6 +1452,23 @@ def infoPage(Map params = [:]) {
                       "🟠 Fair devices (0.8–1.5%/day) are worth monitoring but do not trigger an alert.<br><br>" +
                       "<b>Stale</b> means a device has not reported any activity within the configured threshold (default 24h). " +
                       "Stale is based on Last Activity — not Last Battery. Check stale devices for connectivity issues.</div>"
+        }
+
+        section("<b>🔔 Notification Schedule (2, 3, Weekly)</b>") {
+            paragraph rawHtml: true, "<div style='background-color:#f8f8f8; border:1px solid #dddddd; border-radius:6px; padding:10px; margin-bottom:4px;'>" +
+                      "<b>Notification frequency options</b> (2, 3, Weekly) determine how often alert summaries are sent based on accumulated alert conditions.<br><br>" +
+                      "<b>2 / 3 (interval-based notifications):</b><br>" +
+                      "• Notifications are evaluated on a rolling interval (every 2 or 3 days depending on selection)<br>" +
+                      "• The first notification is sent the day after the condition is first detected<br>" +
+                      "• Subsequent notifications follow the configured interval as long as the condition persists<br><br>" +
+                      "<b>Weekly notifications:</b><br>" +
+                      "• Notifications are anchored to a weekly cycle starting on <b>Monday</b><br>" +
+                      "• The first notification is sent the day after the condition is detected<br>" +
+                      "• After the initial notification, the system aligns to the weekly schedule and continues sending on the next Monday cycle if conditions remain<br><br>" +
+                      "<b>General behavior:</b><br>" +
+                      "• Notifications are not duplicated within the same interval window<br>" +
+                      "• Clearing a condition and re-triggering it will restart the notification cycle<br>" +
+                      "• Scheduling ensures a consistent cadence while avoiding immediate repeated alerts</div>"
         }
 
         section("") {
